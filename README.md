@@ -36,6 +36,13 @@ npm i
 npm run dev
 ```
 
+**Note**: If you're using the C++ backend, you need to run BOTH servers:
+1. Start the backend: `cd backend && run_server.bat` (runs on port 8080)
+2. Start the frontend: `npm run dev` (runs on port 5173)
+3. Open http://localhost:5173 in your browser
+
+See `START_BOTH.md` for detailed instructions.
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).

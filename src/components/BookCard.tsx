@@ -15,11 +15,25 @@ export const BookCard = ({ book, onClick }: BookCardProps) => {
       onClick={onClick}
     >
       <div className="aspect-[2/3] overflow-hidden bg-muted">
-        <img 
-          src={book.coverImage} 
-          alt={book.title}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        {book.coverImage ? (
+          <img 
+            src={book.coverImage} 
+            alt={book.title}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={(e) => {
+              // Fallback to placeholder if image fails to load
+              const target = e.target as HTMLImageElement;
+              target.src = 'https://via.placeholder.com/400x600?text=' + encodeURIComponent(book.title);
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+            <div className="text-center p-4">
+              <div className="text-4xl mb-2">📚</div>
+              <p className="text-xs text-muted-foreground line-clamp-2">{book.title}</p>
+            </div>
+          </div>
+        )}
       </div>
       <CardContent className="p-4">
         <h3 className="font-semibold text-lg line-clamp-2 mb-1">

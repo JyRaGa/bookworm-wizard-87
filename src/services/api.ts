@@ -15,9 +15,9 @@ import { Book, User, ReadingListItem, FilterOptions } from '@/types/book';
  * - DELETE /api/reading-list/:bookId
  */
 
-const API_BASE_URL = 'http://localhost:8080/api'; // Update with your C++ backend URL
+const API_BASE_URL = 'http://localhost:8080/api';
 
-// Mock data for development
+// Mock data for development (fallback)
 const mockBooks: Book[] = [
   {
     id: '1',
@@ -52,112 +52,184 @@ const mockBooks: Book[] = [
     isbn: '9780061120084',
     rating: 4.8
   },
+  {
+    id: '4',
+    title: 'Pride and Prejudice',
+    author: 'Jane Austen',
+    description: 'A romantic novel that critiques the British landed gentry at the end of the 18th century.',
+    coverImage: 'https://cloud.firebrandtech.com/api/v2/image/111/9780785839866/CoverArtHigh/XL',
+    year: 1813,
+    genre: ['Romance', 'Classic'],
+    isbn: '9780141439518',
+    rating: 4.6
+  },
+  {
+    id: '5',
+    title: 'The Catcher in the Rye',
+    author: 'J.D. Salinger',
+    description: 'A controversial novel that explores teenage angst and alienation.',
+    coverImage: 'https://johnatkinsonbooks.co.uk/wp-content/uploads/2019/07/j-d-salinger-the-catcher-in-the-rye-first-uk-edition-1951.jpg',
+    year: 1951,
+    genre: ['Fiction', 'Coming-of-age'],
+    isbn: '9780316769488',
+    rating: 4.0
+  }
 ];
 
 export const authAPI = {
   login: async (email: string, password: string): Promise<User> => {
-    // TODO: Replace with actual C++ backend call
-    // const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ email, password })
-    // });
-    
-    // Mock implementation
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return {
-      id: '1',
-      email,
-      name: email.split('@')[0]
-    };
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   },
 
   register: async (email: string, password: string, name: string): Promise<User> => {
-    // TODO: Replace with actual C++ backend call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return {
-      id: '1',
-      email,
-      name
-    };
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Registration failed');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
   },
 
   logout: async (): Promise<void> => {
-    // TODO: Replace with actual C++ backend call
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Logout is handled client-side
+    return Promise.resolve();
   }
 };
 
 export const booksAPI = {
   getAll: async (): Promise<Book[]> => {
-    // TODO: Replace with actual C++ backend call
-    // const response = await fetch(`${API_BASE_URL}/books`);
-    // return await response.json();
-    
-    await new Promise(resolve => setTimeout(resolve, 800));
-    return mockBooks;
+    try {
+      const response = await fetch(`${API_BASE_URL}/books`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch books');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching books:', error);
+      return mockBooks; // Fallback to mock data
+    }
   },
 
   filter: async (filters: FilterOptions): Promise<Book[]> => {
-    // TODO: Replace with actual C++ backend call
-    // const query = new URLSearchParams(filters as any).toString();
-    // const response = await fetch(`${API_BASE_URL}/books/filter?${query}`);
-    // return await response.json();
-    
-    await new Promise(resolve => setTimeout(resolve, 800));
-    let filtered = [...mockBooks];
-
-    if (filters.author) {
-      filtered = filtered.filter(book => 
-        book.author.toLowerCase().includes(filters.author!.toLowerCase())
-      );
+    try {
+      const params = new URLSearchParams();
+      if (filters.author) params.append('author', filters.author);
+      if (filters.year) params.append('year', filters.year.toString());
+      if (filters.genre) params.append('genre', filters.genre);
+      if (filters.prompt) params.append('prompt', filters.prompt);
+      
+      const response = await fetch(`${API_BASE_URL}/books/filter?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to filter books');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error filtering books:', error);
+      // Fallback to client-side filtering
+      let filtered = [...mockBooks];
+      if (filters.author) {
+        filtered = filtered.filter(book => 
+          book.author.toLowerCase().includes(filters.author!.toLowerCase())
+        );
+      }
+      if (filters.year) {
+        filtered = filtered.filter(book => book.year >= filters.year!);
+      }
+      if (filters.genre) {
+        filtered = filtered.filter(book => 
+          book.genre.some(g => g.toLowerCase() === filters.genre!.toLowerCase())
+        );
+      }
+      if (filters.prompt) {
+        filtered = filtered.filter(book => 
+          book.title.toLowerCase().includes(filters.prompt!.toLowerCase()) ||
+          book.description.toLowerCase().includes(filters.prompt!.toLowerCase())
+        );
+      }
+      return filtered;
     }
-
-    if (filters.year) {
-      filtered = filtered.filter(book => book.year >= filters.year!);
-    }
-
-    if (filters.genre) {
-      filtered = filtered.filter(book => 
-        book.genre.some(g => g.toLowerCase() === filters.genre!.toLowerCase())
-      );
-    }
-
-    if (filters.prompt) {
-      // In real implementation, this would use AI/NLP in C++ backend
-      filtered = filtered.filter(book => 
-        book.title.toLowerCase().includes(filters.prompt!.toLowerCase()) ||
-        book.description.toLowerCase().includes(filters.prompt!.toLowerCase())
-      );
-    }
-
-    return filtered;
   },
 
   getById: async (id: string): Promise<Book | null> => {
-    // TODO: Replace with actual C++ backend call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return mockBooks.find(book => book.id === id) || null;
+    try {
+      const response = await fetch(`${API_BASE_URL}/books/${id}`);
+      if (!response.ok) {
+        return null;
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching book:', error);
+      return mockBooks.find(book => book.id === id) || null;
+    }
   }
 };
 
 export const readingListAPI = {
   get: async (userId: string): Promise<(Book & { status: string })[]> => {
-    // TODO: Replace with actual C++ backend call
-    await new Promise(resolve => setTimeout(resolve, 600));
-    return mockBooks.slice(0, 2).map(book => ({
-      ...book,
-      status: 'want-to-read'
-    }));
+    try {
+      const response = await fetch(`${API_BASE_URL}/reading-list/${userId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch reading list');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching reading list:', error);
+      return [];
+    }
   },
 
   add: async (userId: string, bookId: string, status: string): Promise<void> => {
-    // TODO: Replace with actual C++ backend call
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      const response = await fetch(`${API_BASE_URL}/reading-list`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, bookId, status })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to add book to reading list');
+      }
+    } catch (error) {
+      console.error('Error adding to reading list:', error);
+      throw error;
+    }
   },
 
   remove: async (userId: string, bookId: string): Promise<void> => {
-    // TODO: Replace with actual C++ backend call
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      const response = await fetch(`${API_BASE_URL}/reading-list/${bookId}?userId=${userId}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to remove book from reading list');
+      }
+    } catch (error) {
+      console.error('Error removing from reading list:', error);
+      throw error;
+    }
   }
 };
